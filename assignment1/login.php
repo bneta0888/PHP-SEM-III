@@ -1,199 +1,246 @@
-<?php
+<?php 
 session_start();
-include('function.php');
 include('connection.php');
+include('function.php');
 
+// Initialize an empty message variable
 $message = "";
 
-if (isset($_POST['user_name']) && isset($_POST['password'])) {
-    $user_name = $_POST['user_name'];
-    $password = $_POST['password'];
+// Check if the user has clicked the post button
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    $user_name = $con->real_escape_string($_POST['user_name']);
+    $password = $con->real_escape_string($_POST['password']);
 
-    if (!empty($user_name) && !empty($password)) {
-        $query = "SELECT * FROM users WHERE user_name = '$user_name' AND password = '$password'";
+    if (!empty($user_name) && !empty($password) && !is_numeric($user_name)) {
+        // Query the database
+        $query = "SELECT * FROM users WHERE user_name = '$user_name' LIMIT 1";
         $result = mysqli_query($con, $query);
 
-        if (mysqli_num_rows($result) == 1) {
-            $row = mysqli_fetch_assoc($result);
-            $_SESSION['user_name'] = $row['user_name'];
-            header("Location: index.php");
+        if ($result) {
+            if (mysqli_num_rows($result) > 0) {
+                $user_data = mysqli_fetch_assoc($result);
+                if (password_verify($password,$user_data['password'])) {
+                    $_SESSION['user_id'] = $user_data['user_id'];
+                    header("Location: index.php");
+                    exit;
+                } else {
+                    $message = "Wrong password!";
+                }
+            } else {
+                $message = "User not found!";
+            }
         } else {
-            $message = "Invalid username or password!";
+            $message = "Database query failed: " . mysqli_error($con);
         }
     } else {
-        $message = "Please fill in the form!";
+        $message = "Please enter valid information.";
     }
-
 }
 ?>
 
-
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>User Login</title>
+    <title>Login Form</title>
     <link rel="stylesheet" href="style.css">
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: Arial, sans-serif;
         }
 
         body {
-            background-color: #f4f4f9;
             display: flex;
             flex-direction: column;
-            height: 100vh;
+            background: #000000;
+            min-height: 100vh;
         }
 
-        nav {
-            background-color: #343a40;
-            padding: 15px 25px;
-            color: white;
-            font-size: 18px;
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background-color: #ffffff;
+            color: rgb(0, 0, 0);
             display: flex;
             justify-content: space-between;
             align-items: center;
+            padding: 10px 20px;
+            z-index: 1000;
         }
 
-        .logo {
-            font-size: 24px;
+        .navbar .logo {
+            font-size: 1.5rem;
             font-weight: bold;
         }
 
-        nav ul {
+        .navbar ul {
+            list-style: none;
             display: flex;
-            list-style-type: none;
+            margin: 0;
+            padding: 0;
         }
 
-        nav ul li {
-            margin-left: 15px;
+        .navbar ul li {
+            margin: 0 15px;
         }
 
-        nav ul li a {
-            color: white;
+        .navbar ul li a {
             text-decoration: none;
-            font-weight: 500;
+            color: rgb(0, 0, 0);
         }
 
-        nav ul li a:hover {
-            text-decoration: underline;
+        .navbar ul li a:hover {
+            color: #007bff;
         }
 
-        .login-wrapper {
+        .container {
             flex: 1;
             display: flex;
             justify-content: center;
             align-items: center;
+            margin-top: 60px; /* Adjust to avoid overlap with navbar */
         }
 
-        .login-form {
-            background-color: white;
-            padding: 30px;
-            width: 350px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        .login-container {
+            background: #ffffff;
             border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+            width: 100%;
+            max-width: 400px;
+            align-items: center;
         }
 
-        .login-form h2 {
+        .login-container h1 {
             text-align: center;
-            margin-bottom: 20px;
-            color: #333;
+            margin-bottom: 1.5rem;
+            color: #333333;
+        }
+
+        .message {
+            text-align: center;
+            margin-bottom: 1rem;
+            padding: 0.8rem;
+            border: 1px solid transparent;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+
+        .message.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border-color: #f5c6cb;
         }
 
         .form-group {
-            margin-bottom: 15px;
+            margin-bottom: 1.2rem;
         }
 
         .form-group label {
-            font-size: 14px;
-            color: #777;
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+            color: #555555;
         }
 
         .form-group input {
             width: 100%;
-            padding: 12px;
-            font-size: 16px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            margin-top: 5px;
-            box-sizing: border-box;
+            padding: 0.8rem;
+            border: 1px solid #cccccc;
+            border-radius: 5px;
+            font-size: 1rem;
         }
 
         .form-group input:focus {
-            border-color: #007bff;
             outline: none;
+            border-color: #007BFF;
+            box-shadow: 0 0 5px rgba(0, 123, 255, 0.2);
         }
 
-        .form-group button {
+        .login-btn {
             width: 100%;
-            padding: 14px;
-            background-color: #28a745;
-            color: white;
+            padding: 0.8rem;
+            background: #007BFF;
             border: none;
-            border-radius: 8px;
+            border-radius: 5px;
+            color: white;
+            font-size: 1rem;
             cursor: pointer;
-            font-size: 16px;
         }
 
-        .form-group button:hover {
-            background-color: #218838;
+        .login-btn:hover {
+            background: #0056b3;
         }
 
-        .link-text {
+        .forgot-password {
+            display: block;
             text-align: center;
-            margin-top: 15px;
+            margin-top: 1rem;
+            color: #007BFF;
+            text-decoration: none;
+            font-size: 0.9rem;
         }
 
-        .link-text a {
-            color: #007bff;
+        .forgot-password:hover {
+            text-decoration: underline;
+        }
+
+        .signup-link {
+            text-align: center;
+            margin-top: 1.5rem;
+            font-size: 0.9rem;
+        }
+
+        .signup-link a {
+            color: #007BFF;
             text-decoration: none;
         }
 
-        .link-text a:hover {
+        .signup-link a:hover {
             text-decoration: underline;
         }
     </style>
 </head>
-
 <body>
-
-    <nav>
-        <div class="logo">EduConnect</div>
-        <ul>
-            <li><a href="#">Home</a></li>
-            <li><a href="#">About</a></li>
-            <li><a href="#">Contact</a></li>
+    <nav class="navbar">
+        <div class="logo">MyBrand</div>
+        <ul class="nav-links">
+            <li><a href="#home">Home</a></li>
+            <li><a href="#about">About</a></li>
+            <li><a href="#services">Services</a></li>
+            <li><a href="#contact">Contact</a></li>
         </ul>
     </nav>
+    <div class="container">
+        <div class="login-container">
+            <h1>Login</h1>
+            
+            <!-- Display the message if it exists -->
+            <?php if (!empty($message)): ?>
+                <div class="message error"><?php echo htmlspecialchars($message); ?></div>
+            <?php endif; ?>
 
-    <div class="login-wrapper">
-        <div class="login-form">
-            <h2>Login to EduConnect</h2>
-            <form action="#" method="POST">
+            <form method="post">
                 <div class="form-group">
-                    <label for="name">UserName</label>
-                    <input type="text" id="name" placeholder="Enter your name" name="user_name" required>
+                    <label for="name">Username</label>
+                    <input type="text" id="name" placeholder="Enter your username" name="user_name" required>
                 </div>
                 <div class="form-group">
-                    <label for="password">Password</label>
-                    <input type="password" id="password" placeholder="Enter your password" name="password" required>
+                    <label for="pass">Password</label>
+                    <input type="password" id="pass" placeholder="Enter your password" name="password" required>
                 </div>
-                <div class="form-group">
-                    <button type="submit">Login</button>
-                </div>
+                
+                <button type="submit" class="login-btn">Login</button>
             </form>
-            <div class="link-text">
-                <a href="#">Forgot Password?</a> | <a href="signup.html">Create an Account</a>
-            </div>
+            <a href="forgot.php" class="forgot-password">Forgot Password?</a>
+            <p class="signup-link">Don't have an account? <a href="signup.php">Sign Up</a></p>
         </div>
     </div>
-
 </body>
-
 </html>

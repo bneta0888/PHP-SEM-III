@@ -1,24 +1,34 @@
-<?php
-session_abort();
-include ('connection.php');
-include ('function.php');
+<?php 
+session_start();
+include('connection.php');
+include('function.php');
+//check if the user has clicked in the post button
 
-if (isset($_POST['fullname']) && isset($_POST['email']) && isset($_POST['password'])) {
-    $fullname = $_POST['fullname'];
-    $email = $_POST['email'];
-    $password = $_POST['password'];
+if($_SERVER['REQUEST_METHOD']=='POST'){
 
-    if (!empty($fullname) && !empty($email) && !empty($password)) {
-        $query = "insert into users (fullname, email, password) values ('$fullname', '$email', '$password')";
+    $user_name = $_POST['user_name'];
+    $password =$_POST['password'];
+    $hash= password_hash(($password), PASSWORD_BCRYPT);
+
+    if(!empty($user_name) && !empty($password) && !is_numeric($user_name)){
+
+        //save to database'
+        $user_id = random_num(20);
+        $query = "insert into users (user_id,user_name,password) values ('$user_id','$user_name','$hash')";
+
         mysqli_query($con, $query);
         header("Location: login.php");
         die;
-    } else {
-        echo "Please fill in the form!";
+    }
+    else{
+        echo 'please enter some valid information';
     }
 }
 
 ?>
+
+
+
 
 <!DOCTYPE html>
 <html lang="en">
@@ -32,161 +42,176 @@ if (isset($_POST['fullname']) && isset($_POST['email']) && isset($_POST['passwor
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: Arial, sans-serif;
         }
 
         body {
-            background-color: #f4f4f9;
             display: flex;
             flex-direction: column;
-            height: 100vh;
+            background: #000000;
+            min-height: 100vh;
         }
 
-        nav {
-            background-color: #343a40;
-            padding: 15px 25px;
-            color: white;
-            font-size: 18px;
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background-color: #ffffff;
+            color: rgb(0, 0, 0);
             display: flex;
             justify-content: space-between;
             align-items: center;
+            padding: 10px 20px;
+            z-index: 1000;
         }
 
-        .logo {
-            font-size: 24px;
+        .navbar .logo {
+            font-size: 1.5rem;
             font-weight: bold;
         }
 
-        nav ul {
+        .navbar ul {
+            list-style: none;
             display: flex;
-            list-style-type: none;
+            margin: 0;
+            padding: 0;
         }
 
-        nav ul li {
-            margin-left: 15px;
+        .navbar ul li {
+            margin: 0 15px;
         }
 
-        nav ul li a {
-            color: white;
+        .navbar ul li a {
             text-decoration: none;
-            font-weight: 500;
+            color: rgb(0, 0, 0);
         }
 
-        nav ul li a:hover {
-            text-decoration: underline;
+        .navbar ul li a:hover {
+            color: #007bff;
         }
 
-        .signup-wrapper {
+        .container {
             flex: 1;
             display: flex;
             justify-content: center;
             align-items: center;
+            margin-top: 60px; /* Adjust to avoid overlap with navbar */
         }
 
-        .signup-form {
-            background-color: white;
-            padding: 30px;
-            width: 350px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        .login-container {
+            background: #ffffff;
             border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+            width: 100%;
+            max-width: 400px;
+            align-items: center;
         }
 
-        .signup-form h2 {
+        .login-container h1 {
             text-align: center;
-            margin-bottom: 20px;
-            color: #333;
+            margin-bottom: 1.5rem;
+            color: #333333;
         }
 
         .form-group {
-            margin-bottom: 15px;
+            margin-bottom: 1.2rem;
         }
 
         .form-group label {
-            font-size: 14px;
-            color: #777;
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+            color: #555555;
         }
 
         .form-group input {
             width: 100%;
-            padding: 12px;
-            font-size: 16px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            margin-top: 5px;
-            box-sizing: border-box;
+            padding: 0.8rem;
+            border: 1px solid #cccccc;
+            border-radius: 5px;
+            font-size: 1rem;
         }
 
         .form-group input:focus {
-            border-color: #007bff;
             outline: none;
+            border-color: #007BFF;
+            box-shadow: 0 0 5px rgba(0, 123, 255, 0.2);
         }
 
-        .form-group button {
+        .login-btn {
             width: 100%;
-            padding: 14px;
-            background-color: #007bff;
-            color: white;
+            padding: 0.8rem;
+            background: #007BFF;
             border: none;
-            border-radius: 8px;
+            border-radius: 5px;
+            color: white;
+            font-size: 1rem;
             cursor: pointer;
-            font-size: 16px;
         }
 
-        .form-group button:hover {
-            background-color: #0056b3;
+        .login-btn:hover {
+            background: #0056b3;
         }
 
-        .link-text {
+        .forgot-password {
+            display: block;
             text-align: center;
-            margin-top: 15px;
+            margin-top: 1rem;
+            color: #007BFF;
+            text-decoration: none;
+            font-size: 0.9rem;
         }
 
-        .link-text a {
-            color: #007bff;
+        .forgot-password:hover {
+            text-decoration: underline;
+        }
+
+        .signup-link {
+            text-align: center;
+            margin-top: 1.5rem;
+            font-size: 0.9rem;
+        }
+
+        .signup-link a {
+            color: #007BFF;
             text-decoration: none;
         }
 
-        .link-text a:hover {
+        .signup-link a:hover {
             text-decoration: underline;
         }
     </style>
 </head>
 <body>
-
-<nav>
-    <div class="logo">EduConnect</div>
-    <ul>
-        <li><a href="#">Home</a></li>
-        <li><a href="#">About</a></li>
-        <li><a href="#">Contact</a></li>
-    </ul>
-</nav>
-
-<div class="signup-wrapper">
-    <div class="signup-form">
-        <h2>Create an Account</h2>
-        <form action="#">
-            <div class="form-group">
-                <label for="fullname">Full Name</label>
-                <input type="text" id="fullname" placeholder="Enter your full name" required>
-            </div>
-            <div class="form-group">
-                <label for="email">Email Address</label>
-                <input type="email" id="email" placeholder="Enter your email" required>
-            </div>
-            <div class="form-group">
-                <label for="password">Password</label>
-                <input type="password" id="password" placeholder="Create a password" required>
-            </div>
-            <div class="form-group">
-                <button type="submit">Sign Up</button>
-            </div>
-        </form>
-        <div class="link-text">
-            Already have an account? <a href="login.html">Login</a>
+    <nav class="navbar">
+        <div class="logo">MyBrand</div>
+        <ul class="nav-links">
+            <li><a href="#home">Home</a></li>
+            <li><a href="#about">About</a></li>
+            <li><a href="#services">Services</a></li>
+            <li><a href="#contact">Contact</a></li>
+        </ul>
+    </nav>
+    <div class="container">
+        <div class="login-container">
+            <h1>Sign Up</h1>
+            <form method="post">
+                <div class="form-group">
+                    <label for="name">Username</label>
+                    <input type="text" id="name" placeholder="Enter your username" name="user_name" required>
+                </div>
+                <div class="form-group">
+                    <label for="pass">Password</label>
+                    <input type="password" id="pass" placeholder="Enter your password" name="password" required>
+                </div>
+                
+                <button type="submit" class="login-btn">Login</button>
+            </form>
+            <a href="forgot.php" class="forgot-password">Forgot Password?</a>
+            <p class="signup-link">Already have an account? <a href="login.php">Login</a></p>
         </div>
     </div>
-</div>
-
 </body>
 </html>
